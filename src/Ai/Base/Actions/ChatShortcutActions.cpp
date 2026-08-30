@@ -1,13 +1,12 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #include "ChatShortcutActions.h"
+
 #include "Event.h"
 #include "Formations.h"
-#include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
 #include "PositionValue.h"
 
@@ -73,7 +72,7 @@ bool FollowChatShortcutAction::Execute(Event /*event*/)
         else
         {
             WorldLocation loc = formation->GetLocation();
-            if (Formation::IsNullLocation(loc) || loc.GetMapId() == MAPID_INVALID)
+            if (Formation::IsNullLocation(loc) || loc.GetMapId() == -1)
                 return false;
 
             MovementPriority priority = botAI->GetState() == BOT_STATE_COMBAT ? MovementPriority::MOVEMENT_COMBAT : MovementPriority::MOVEMENT_NORMAL;
@@ -86,8 +85,7 @@ bool FollowChatShortcutAction::Execute(Event /*event*/)
 
         if (moved)
         {
-            botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-                "following", "Following", {}));
+            botAI->TellMaster("Following");
             return true;
         }
     }
@@ -110,8 +108,7 @@ bool FollowChatShortcutAction::Execute(Event /*event*/)
     }
     */
 
-    botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-        "following", "Following", {}));
+    botAI->TellMaster("Following");
     return true;
 }
 
@@ -128,8 +125,7 @@ bool StayChatShortcutAction::Execute(Event /*event*/)
     SetReturnPosition(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
     SetStayPosition(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
 
-    botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-        "staying", "Staying", {}));
+    botAI->TellMaster("Staying");
     return true;
 }
 
@@ -144,8 +140,7 @@ bool MoveFromGroupChatShortcutAction::Execute(Event /*event*/)
     botAI->ChangeStrategy("+move from group", BOT_STATE_NON_COMBAT);
     botAI->ChangeStrategy("+move from group", BOT_STATE_COMBAT);
 
-    botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-        "move_from_group", "Moving away from group", {}));
+    botAI->TellMaster("Moving away from group");
     return true;
 }
 
@@ -164,13 +159,11 @@ bool FleeChatShortcutAction::Execute(Event /*event*/)
 
     if (bot->GetMapId() != master->GetMapId() || bot->GetDistance(master) > sPlayerbotAIConfig.sightDistance)
     {
-        botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-            "fleeing_far", "I will not flee with you - too far away", {}));
+        botAI->TellError("I will not flee with you - too far away");
         return true;
     }
 
-    botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-        "fleeing", "Fleeing", {}));
+    botAI->TellMaster("Fleeing");
     return true;
 }
 
@@ -187,8 +180,7 @@ bool GoawayChatShortcutAction::Execute(Event /*event*/)
     ResetReturnPosition();
     ResetStayPosition();
 
-    botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-        "running_away", "Running away", {}));
+    botAI->TellMaster("Running away");
     return true;
 }
 
@@ -204,8 +196,7 @@ bool GrindChatShortcutAction::Execute(Event /*event*/)
     ResetReturnPosition();
     ResetStayPosition();
 
-    botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-        "grinding", "Grinding", {}));
+    botAI->TellMaster("Grinding");
     return true;
 }
 
@@ -225,8 +216,7 @@ bool TankAttackChatShortcutAction::Execute(Event /*event*/)
     ResetReturnPosition();
     ResetStayPosition();
 
-    botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-        "attacking", "Attacking", {}));
+    botAI->TellMaster("Attacking");
     return true;
 }
 

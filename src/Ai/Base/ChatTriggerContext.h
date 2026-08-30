@@ -1,11 +1,10 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
-#ifndef PLAYERBOTS_CHATTRIGGERCONTEXT_H
-#define PLAYERBOTS_CHATTRIGGERCONTEXT_H
+#ifndef _PLAYERBOT_CHATTRIGGERCONTEXT_H
+#define _PLAYERBOT_CHATTRIGGERCONTEXT_H
 
 #include "ChatCommandTrigger.h"
 #include "NamedObjectContext.h"
@@ -66,7 +65,6 @@ public:
         creators["maintenance"] = &ChatTriggerContext::maintenance;
         creators["remove glyph"] = &ChatTriggerContext::remove_glyph;
         creators["autogear"] = &ChatTriggerContext::autogear;
-        creators["autogear bis"] = &ChatTriggerContext::autogear_bis;
         creators["equip upgrade"] = &ChatTriggerContext::equip_upgrade;
         creators["attack"] = &ChatTriggerContext::attack;
         creators["pull"] = &ChatTriggerContext::pull;
@@ -122,7 +120,6 @@ public:
         creators["outfit"] = &ChatTriggerContext::outfit;
         creators["go"] = &ChatTriggerContext::go;
         creators["ready"] = &ChatTriggerContext::ready_check;
-        creators["rebuff"] = &ChatTriggerContext::rebuff;
         creators["debug"] = &ChatTriggerContext::debug;
         creators["cdebug"] = &ChatTriggerContext::cdebug;
         creators["cs"] = &ChatTriggerContext::cs;
@@ -223,7 +220,6 @@ private:
     static Trigger* maintenance(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "maintenance"); }
     static Trigger* remove_glyph(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "remove glyph"); }
     static Trigger* autogear(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "autogear"); }
-    static Trigger* autogear_bis(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "autogear bis"); }
     static Trigger* equip_upgrade(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "equip upgrade"); }
     static Trigger* co(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "co"); }
     static Trigger* nc(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "nc"); }
@@ -263,7 +259,6 @@ private:
     static Trigger* reset_ai(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "reset botAI"); }
     static Trigger* spell(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "spell"); }
     static Trigger* ready_check(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "ready check"); }
-    static Trigger* rebuff(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "rebuff"); }
     static Trigger* give_leader(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "give leader"); }
     static Trigger* cheat(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "cheat"); }
     static Trigger* ginvite(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "ginvite"); }

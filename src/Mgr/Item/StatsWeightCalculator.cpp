@@ -4,6 +4,9 @@
  */
 
 #include "StatsWeightCalculator.h"
+
+#include <memory>
+
 #include "AiFactory.h"
 #include "DBCStores.h"
 #include "ItemEnchantmentMgr.h"
@@ -11,39 +14,21 @@
 #include "ObjectMgr.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotFactory.h"
-#include "RandomItemMgr.h"
 #include "SharedDefines.h"
 #include "SpellAuraDefines.h"
 #include "SpellMgr.h"
 #include "StatsCollector.h"
 #include "Unit.h"
-#include <memory>
 
 namespace
 {
-constexpr uint32 SPELL_MOLTEN_ARMOR_RANKS[] = { 30482, 43045, 43046 };
-constexpr uint32 SPELL_FEL_ARMOR_RANKS[] = { 28176, 28189, 47892, 47893 };
-constexpr uint32 SPELL_CAREFUL_AIM = 34484;
-constexpr uint32 SPELL_HUNTER_VS_WILD = 56341;
-constexpr uint32 SPELL_ARMORED_TO_THE_TEETH = 61222;
-constexpr uint32 SPELL_MENTAL_DEXTERITY = 51885;
-constexpr uint32 SPELL_ROGUE_SWORD_SPECIALIZATION = 13964;
-constexpr uint32 SPELL_POLEAXE_SPECIALIZATION = 12785;
-constexpr uint32 SPELL_NERVES_OF_COLD_STEEL = 50138;
-constexpr uint32 SPELL_SHADOW_FOCUS = 15835;
-constexpr uint32 SPELL_ARCANE_FOCUS = 12840;
-}
-
-template <size_t Size>
-bool HasAnySpell(Player* player, uint32 const (&spellIds)[Size])
-{
-    for (uint32 const spellId : spellIds)
-    {
-        if (player->HasSpell(spellId))
-            return true;
-    }
-
-    return false;
+constexpr uint32 SPELL_MOLTEN_ARMOR_RANK_1 = 30482;
+constexpr uint32 SPELL_MOLTEN_ARMOR_RANK_2 = 43045;
+constexpr uint32 SPELL_MOLTEN_ARMOR_RANK_3 = 43046;
+constexpr uint32 SPELL_FEL_ARMOR_RANK_1 = 28176;
+constexpr uint32 SPELL_FEL_ARMOR_RANK_2 = 28189;
+constexpr uint32 SPELL_FEL_ARMOR_RANK_3 = 47892;
+constexpr uint32 SPELL_FEL_ARMOR_RANK_4 = 47893;
 }
 
 StatsWeightCalculator::StatsWeightCalculator(Player* player) : player_(player)
@@ -203,53 +188,6 @@ void StatsWeightCalculator::CalculateRandomProperty(int32 randomPropertyId, uint
                 collector_->CollectEnchantStats(enchant, enchant_amount);
         }
     }
-}
-
-int32 StatsWeightCalculator::PickBestRandomPropertyId(uint32 itemId)
-{
-    ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
-    if (!proto)
-        return 0;
-
-    bool isSuffix = false;
-    uint32 poolEntry = proto->RandomProperty;
-    if (!poolEntry)
-    {
-        poolEntry = proto->RandomSuffix;
-        isSuffix = true;
-    }
-    if (!poolEntry)
-        return 0;
-
-    std::vector<uint32> const& pool = sRandomItemMgr.GetEnchantmentPool(poolEntry);
-    if (pool.empty())
-        return 0;
-
-    Reset();
-    GenerateWeights(player_);
-
-    int32 bestId = 0;
-    float bestScore = 0.0f;
-    for (uint32 enchId : pool)
-    {
-        int32 candidate = isSuffix ? -static_cast<int32>(enchId) : static_cast<int32>(enchId);
-
-        collector_->Reset();
-        CalculateRandomProperty(candidate, itemId);
-
-        float score = 0.0f;
-        for (uint32 i = 0; i < STATS_TYPE_MAX; ++i)
-            score += stats_weights_[i] * collector_->stats[i];
-
-        if (bestId == 0 || score > bestScore)
-        {
-            bestId = candidate;
-            bestScore = score;
-        }
-    }
-
-    collector_->Reset();
-    return bestId;
 }
 
 void StatsWeightCalculator::GenerateWeights(Player* player)
@@ -526,24 +464,26 @@ void StatsWeightCalculator::GenerateAdditionalWeights(Player* player)
     // int tab = AiFactory::GetPlayerSpecTab(player);
     if (cls == CLASS_HUNTER)
     {
-        if (player->HasAura(SPELL_CAREFUL_AIM))
+        if (player->HasAura(34484))
             stats_weights_[STATS_TYPE_INTELLECT] += 1.1f;
-        if (player->HasAura(SPELL_HUNTER_VS_WILD))
+        if (player->HasAura(56341))
             stats_weights_[STATS_TYPE_STAMINA] += 0.3f;
     }
     else if (cls == CLASS_WARRIOR)
     {
-        if (player->HasAura(SPELL_ARMORED_TO_THE_TEETH))
+        if (player->HasAura(61222))
             stats_weights_[STATS_TYPE_ARMOR] += 0.03f;
     }
     else if (cls == CLASS_SHAMAN)
     {
-        if (player->HasAura(SPELL_MENTAL_DEXTERITY))
+        if (player->HasAura(51885))
             stats_weights_[STATS_TYPE_INTELLECT] += 1.1f;
     }
     else if (cls == CLASS_MAGE)
     {
-        if (!HasAnySpell(player, SPELL_MOLTEN_ARMOR_RANKS))
+        if (!player->HasSpell(SPELL_MOLTEN_ARMOR_RANK_1)
+            && !player->HasSpell(SPELL_MOLTEN_ARMOR_RANK_2)
+            && !player->HasSpell(SPELL_MOLTEN_ARMOR_RANK_3))
         {
             if (tab != MAGE_TAB_FIRE)
                 stats_weights_[STATS_TYPE_SPIRIT] -= 0.6f;
@@ -553,7 +493,8 @@ void StatsWeightCalculator::GenerateAdditionalWeights(Player* player)
     }
     else if (cls == CLASS_WARLOCK)
     {
-        if (!HasAnySpell(player, SPELL_FEL_ARMOR_RANKS))
+        if (!player->HasSpell(SPELL_FEL_ARMOR_RANK_1) && !player->HasSpell(SPELL_FEL_ARMOR_RANK_2) &&
+            !player->HasSpell(SPELL_FEL_ARMOR_RANK_3) && !player->HasSpell(SPELL_FEL_ARMOR_RANK_4))
             stats_weights_[STATS_TYPE_SPIRIT] -= 0.4f;
     }
 
@@ -701,17 +642,17 @@ void StatsWeightCalculator::CalculateItemTypePenalty(ItemTemplate const* proto)
             weight_ *= 1.5;
         }
 
-        if (cls == CLASS_ROGUE && player_->HasAura(SPELL_ROGUE_SWORD_SPECIALIZATION) &&
+        if (cls == CLASS_ROGUE && player_->HasAura(13964) &&
             (proto->SubClass == ITEM_SUBCLASS_WEAPON_SWORD || proto->SubClass == ITEM_SUBCLASS_WEAPON_AXE))
         {
             weight_ *= 1.1;
         }
-        if (cls == CLASS_WARRIOR && player_->HasAura(SPELL_POLEAXE_SPECIALIZATION) &&
+        if (cls == CLASS_WARRIOR && player_->HasAura(12785) &&
             (proto->SubClass == ITEM_SUBCLASS_WEAPON_POLEARM || proto->SubClass == ITEM_SUBCLASS_WEAPON_AXE2))
         {
             weight_ *= 1.1;
         }
-        if (cls == CLASS_DEATH_KNIGHT && player_->HasAura(SPELL_NERVES_OF_COLD_STEEL) && !isDoubleHand)
+        if (cls == CLASS_DEATH_KNIGHT && player_->HasAura(50138) && !isDoubleHand)
         {
             weight_ *= 1.3;
         }
@@ -750,9 +691,9 @@ void StatsWeightCalculator::ApplyOverflowPenalty(Player* player)
                 player->GetTotalAuraModifier(SPELL_AURA_MOD_INCREASES_SPELL_PCT_TO_HIT);  // suppression (18176)
             hit_current += player->GetRatingBonusValue(CR_HIT_SPELL);
 
-            if (cls == CLASS_PRIEST && tab == PRIEST_TAB_SHADOW && player->HasAura(SPELL_SHADOW_FOCUS))
+            if (cls == CLASS_PRIEST && tab == PRIEST_TAB_SHADOW && player->HasAura(15835))  // Shadow Focus
                 hit_current += 3;
-            if (cls == CLASS_MAGE && tab == MAGE_TAB_ARCANE && player->HasAura(SPELL_ARCANE_FOCUS))
+            if (cls == CLASS_MAGE && tab == MAGE_TAB_ARCANE && player->HasAura(12840))  // Arcane Focus
                 hit_current += 3;
 
             hit_overflow = SPELL_HIT_OVERFLOW;

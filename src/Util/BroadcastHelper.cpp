@@ -1,14 +1,9 @@
-/*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
- */
 
-#include "BroadcastHelper.h"
-#include "AiFactory.h"
-#include "Channel.h"
 #include "Playerbots.h"
+#include "BroadcastHelper.h"
 #include "ServerFacade.h"
+#include "Channel.h"
+#include "AiFactory.h"
 
 BroadcastHelper::BroadcastHelper() {}
 
@@ -16,7 +11,7 @@ uint8 BroadcastHelper::GetLocale()
 {
     uint8 locale = sWorld->GetDefaultDbcLocale();
     // -- In case we're using auto detect on config file^M
-    if (locale >= TOTAL_LOCALES)
+    if (locale >= MAX_LOCALES)
         locale = LocaleConstant::LOCALE_enUS;
     return locale;
 }

@@ -1,58 +1,45 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
-#ifndef PLAYERBOTS_GENERICBUFFUTILS_H
-#define PLAYERBOTS_GENERICBUFFUTILS_H
+#pragma once
 
-#include "Common.h"
 #include <string>
-#include <unordered_map>
+#include <functional>
+#include "Common.h"
+#include "Group.h"
+#include "Chat.h"
+#include "Language.h"
 
-class Aura;
 class Player;
 class PlayerbotAI;
-class Unit;
 
 namespace ai::buff
 {
 
-typedef std::unordered_map<std::string, uint32> MissingBuffReagentNoticeMap;
-
-// True when the buff should be (re)cast: topped off toward full duration during an
-// out-of-combat force-rebuff, below baseBeforeDuration ms remaining otherwise.
-bool BuffBelowRefreshTarget(PlayerbotAI* botAI, Aura* aura, uint32 baseBeforeDuration);
-
-bool IsGroupVariantEnabled(Player* bot, std::string const& name);
-
+// Build an aura qualifier "single + greater" to avoid double-buffing
 std::string MakeAuraQualifierForBuff(std::string const& name);
 
+// Returns the group spell name for a given single-target buff.
+// If no group equivalent exists, returns "".
 std::string GroupVariantFor(std::string const& name);
 
-bool NeedsPostLoginBuffGrace(std::string const& name);
-
-bool ShouldDeferPartyBuffEvaluationForRecentLogin(
-    Player* bot,
-    Unit* target,
-    std::string const& spell);
-
-bool ShouldDeferGreaterBlessingAssignmentForRecentLogin(Player* bot);
-
+// Checks if the bot has the required reagents to cast a spell (by its spellId).
+// Returns false if the spellId is invalid.
 bool HasRequiredReagents(Player* bot, uint32 spellId);
 
-void ClearMissingBuffReagentNotice(PlayerbotAI* botAI, std::string const& groupName);
-
-bool TryAnnounceMissingBuffReagents(
-    PlayerbotAI* botAI, std::string const& baseName, std::string const& groupName);
-
+// Applies the "switch to group buff" policy if: the bot is in a group of size x+,
+// the group variant is known/useful, and reagents are available. Otherwise, returns baseName.
+// If announceOnMissing == true and reagents are missing, calls the 'announce' callback
+// (if provided) to notify the party/raid.
 std::string UpgradeToGroupIfAppropriate(
     Player* bot,
     PlayerbotAI* botAI,
     std::string const& baseName,
-    std::string* outMissingReagentGroupName = nullptr);
-
+    bool announceOnMissing = false,
+    std::function<void(std::string const&)> announce = {}
+    );
 }
 
 namespace ai::spell
@@ -60,4 +47,22 @@ namespace ai::spell
     bool HasSpellOrCategoryCooldown(Player* bot, uint32 spellId);
 }
 
-#endif
+namespace ai::chat {
+    inline std::function<void(std::string const&)> MakeGroupAnnouncer(Player* me)
+    {
+        return [me](std::string const& msg)
+        {
+            if (Group* g = me->GetGroup())
+            {
+                WorldPacket data;
+                ChatMsg type = g->isRaidGroup() ? CHAT_MSG_RAID : CHAT_MSG_PARTY;
+                ChatHandler::BuildChatPacket(data, type, LANG_UNIVERSAL, me, /*receiver=*/nullptr, msg.c_str());
+                g->BroadcastPacket(&data, true, -1, me->GetGUID());
+            }
+            else
+            {
+                me->Say(msg, LANG_UNIVERSAL);
+            }
+        };
+    }
+}

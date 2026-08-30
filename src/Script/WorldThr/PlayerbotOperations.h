@@ -1,24 +1,22 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
-#ifndef PLAYERBOTS_PLAYERBOTOPERATIONS_H
-#define PLAYERBOTS_PLAYERBOTOPERATIONS_H
+#ifndef _PLAYERBOT_OPERATIONS_H
+#define _PLAYERBOT_OPERATIONS_H
 
 #include "Group.h"
 #include "GroupMgr.h"
 #include "GuildMgr.h"
+#include "Playerbots.h"
 #include "ObjectAccessor.h"
+#include "PlayerbotOperation.h"
 #include "Player.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotAIConfig.h"
 #include "PlayerbotMgr.h"
-#include "PlayerbotOperation.h"
 #include "PlayerbotRepository.h"
-#include "Playerbots.h"
-#include "RandomPlayerbotFactory.h"
 #include "RandomPlayerbotMgr.h"
 #include "UseMeetingStoneAction.h"
 #include "WorldSession.h"
@@ -244,7 +242,6 @@ public:
         }
 
         group->ChangeLeader(newLeader->GetGUID());
-        group->SendUpdate();
         LOG_DEBUG("playerbots", "GroupSetLeaderOperation: Changed leader to {}", newLeader->GetName());
         return true;
     }
@@ -431,7 +428,7 @@ public:
             return false;
 
         Group* group = bot->GetGroup();
-        if (group && !bot->InBattleground() && !bot->InBattlegroundQueue() && IsRealPlayer(botAI->GetMaster()))
+        if (group && !bot->InBattleground() && !bot->InBattlegroundQueue() && botAI->HasActivePlayerMaster())
             PlayerbotRepository::instance().Save(botAI);
 
         return true;
@@ -522,31 +519,6 @@ public:
 private:
     ObjectGuid m_botGuid;
     uint32 m_masterAccountId = 0;
-};
-
-class ArenaTeamAssignOperation : public PlayerbotOperation
-{
-public:
-    explicit ArenaTeamAssignOperation(ObjectGuid botGuid) : m_botGuid(botGuid) {}
-
-    bool Execute() override
-    {
-        Player* bot = ObjectAccessor::FindPlayer(m_botGuid);
-        if (!bot)
-            return false;
-
-        RandomPlayerbotFactory::AssignBotToArenaTeamInternal(bot);
-        return true;
-    }
-
-    ObjectGuid GetBotGuid() const override { return m_botGuid; }
-
-    std::string GetName() const override { return "ArenaTeamAssign"; }
-
-    bool IsValid() const override { return ObjectAccessor::FindPlayer(m_botGuid) != nullptr; }
-
-private:
-    ObjectGuid m_botGuid;
 };
 
 #endif

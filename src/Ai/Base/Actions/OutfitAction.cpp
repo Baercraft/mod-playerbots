@@ -1,16 +1,15 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #include "OutfitAction.h"
+
 #include "Event.h"
-#include "ItemPackets.h"
 #include "ItemVisitors.h"
 #include "PlayerbotRepository.h"
-#include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
+#include "ItemPackets.h"
 
 bool OutfitAction::Execute(Event event)
 {
@@ -19,12 +18,9 @@ bool OutfitAction::Execute(Event event)
     if (param == "?")
     {
         List();
-        botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-            "outfit_usage_add", "outfit <name> +[item] to add items", {}));
-        botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-            "outfit_usage_remove", "outfit <name> -[item] to remove items", {}));
-        botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-            "outfit_usage_equip", "outfit <name> equip/replace to equip items", {}));
+        botAI->TellMaster("outfit <name> +[item] to add items");
+        botAI->TellMaster("outfit <name> -[item] to remove items");
+        botAI->TellMaster("outfit <name> equip/replace to equip items");
     }
     else
     {
@@ -36,10 +32,8 @@ bool OutfitAction::Execute(Event event)
             PlayerbotRepository::instance().Save(botAI);
 
             std::ostringstream out;
-            botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-                "outfit_set_as",
-                "Setting outfit %name as %param",
-                {{"%name", name}, {"%param", param}}));
+            out << "Setting outfit " << name << " as " << param;
+            botAI->TellMaster(out);
             return true;
         }
 
@@ -55,20 +49,18 @@ bool OutfitAction::Execute(Event event)
         std::string const command = param.substr(space + 1);
         if (command == "equip")
         {
-            botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-                "outfit_equipping",
-                "Equipping outfit %name",
-                {{"%name", name}}));
+            std::ostringstream out;
+            out << "Equipping outfit " << name;
+            botAI->TellMaster(out);
 
             EquipItems(outfit);
             return true;
         }
         else if (command == "replace")
         {
-            botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-                "outfit_replace_current",
-                "Replacing current equip with outfit %name",
-                {{"%name", name}}));
+            std::ostringstream out;
+            out << "Replacing current equip with outfit " << name;
+            botAI->TellMaster(out);
 
             for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; slot++)
             {
@@ -91,10 +83,9 @@ bool OutfitAction::Execute(Event event)
         }
         else if (command == "reset")
         {
-            botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-                "outfit_resetting",
-                "Resetting outfit %name",
-                {{"%name", name}}));
+            std::ostringstream out;
+            out << "Resetting outfit " << name;
+            botAI->TellMaster(out);
 
             Save(name, ItemIds());
             PlayerbotRepository::instance().Save(botAI);
@@ -102,10 +93,9 @@ bool OutfitAction::Execute(Event event)
         }
         else if (command == "update")
         {
-            botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-                "outfit_updating_current",
-                "Updating with current items outfit %name",
-                {{"%name", name}}));
+            std::ostringstream out;
+            out << "Updating with current items outfit " << name;
+            botAI->TellMaster(out);
 
             Update(name);
             PlayerbotRepository::instance().Save(botAI);
@@ -117,25 +107,24 @@ bool OutfitAction::Execute(Event event)
         {
             ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemid);
 
+            std::ostringstream out;
+            out << chat->FormatItem(proto);
             if (remove)
             {
                 std::set<uint32>::iterator j = outfit.find(itemid);
                 if (j != outfit.end())
                     outfit.erase(j);
 
-                botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-                    "outfit_item_removed_from",
-                    "%item removed from %name",
-                    {{"%item", chat->FormatItem(proto)}, {"%name", name}}));
+                out << " removed from ";
             }
             else
             {
                 outfit.insert(itemid);
-                botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-                    "outfit_item_added_to",
-                    "%item added to %name",
-                    {{"%item", chat->FormatItem(proto)}, {"%name", name}}));
+                out << " added to ";
             }
+
+            out << name;
+            botAI->TellMaster(out.str());
         }
 
         Save(name, outfit);

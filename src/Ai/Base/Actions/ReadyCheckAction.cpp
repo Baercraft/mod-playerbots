@@ -1,23 +1,15 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
-#include "ReadyCheckAction.h"
-#include "Event.h"
-#include "Playerbots.h"
 #include <memory>
 #include <mutex>
 #include <vector>
 
-static void SendReadyConfirm(Player* bot)
-{
-    WorldPacket packet(MSG_RAID_READY_CHECK);
-    packet << bot->GetGUID();
-    packet << uint8(1);
-    bot->GetSession()->HandleRaidReadyCheckOpcode(packet);
-}
+#include "ReadyCheckAction.h"
+#include "Event.h"
+#include "Playerbots.h"
 
 std::string const formatPercent(std::string const name, uint8 value, float percent)
 {
@@ -167,21 +159,12 @@ bool ReadyCheckAction::Execute(Event event)
         p >> player;
         if (player == bot->GetGUID())
             return false;
-
-        // Defer the ready reply until buffs are topped off.
-        if (sPlayerbotAIConfig.forceRebuffOnReadyCheck && !bot->IsInCombat() &&
-            botAI->HasStrategy("force rebuff", BOT_STATE_NON_COMBAT))
-        {
-            ReportReadinessToMaster();
-            botAI->forceRebuff.Begin(true);
-            return true;
-        }
     }
 
     return ReadyCheck();
 }
 
-void ReadyCheckAction::ReportReadinessToMaster()
+bool ReadyCheckAction::ReadyCheck()
 {
     std::call_once(
         ReadyChecker::initFlag,
@@ -231,15 +214,11 @@ void ReadyCheckAction::ReportReadinessToMaster()
     }
 
     botAI->TellMaster(out);
-}
 
-bool ReadyCheckAction::ReadyCheck()
-{
-    ReportReadinessToMaster();
-
-    SendReadyConfirm(bot);
-
-    botAI->forceRebuff.End();
+    WorldPacket packet(MSG_RAID_READY_CHECK);
+    packet << bot->GetGUID();
+    packet << uint8(1);
+    bot->GetSession()->HandleRaidReadyCheckOpcode(packet);
 
     botAI->ChangeStrategy("-ready check", BOT_STATE_NON_COMBAT);
 
@@ -247,30 +226,3 @@ bool ReadyCheckAction::ReadyCheck()
 }
 
 bool FinishReadyCheckAction::Execute(Event /*event*/) { return ReadyCheck(); }
-
-// Manual "rebuff" command: opens a rebuff window with no ready check to answer.
-bool ForceRebuffAction::Execute(Event /*event*/)
-{
-    if (bot->IsInCombat() || !botAI->HasStrategy("force rebuff", BOT_STATE_NON_COMBAT))
-        return false;
-
-    botAI->forceRebuff.Begin(false);
-    return true;
-}
-
-bool ReadyReplyAction::isUseful()
-{
-    ForceRebuffState const& rebuff = botAI->forceRebuff;
-    return rebuff.IsPending() && !rebuff.IsOnGlobalCooldown() &&
-           !bot->GetCurrentSpell(CURRENT_GENERIC_SPELL) && !bot->GetCurrentSpell(CURRENT_CHANNELED_SPELL) &&
-           !rebuff.IsBuffPendingThisCycle();
-}
-
-bool ReadyReplyAction::Execute(Event /*event*/)
-{
-    if (botAI->forceRebuff.ShouldReplyToReadyCheck())
-        SendReadyConfirm(bot);
-
-    botAI->forceRebuff.End();
-    return true;
-}

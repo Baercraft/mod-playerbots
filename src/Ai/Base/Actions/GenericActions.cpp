@@ -1,22 +1,20 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #include "GenericActions.h"
-#include "CharmInfo.h"
-#include "CreatureAI.h"
-#include "Pet.h"
-#include "Player.h"
 #include "PlayerbotAI.h"
+#include "Player.h"
+#include "Pet.h"
 #include "PlayerbotAIConfig.h"
-#include "PlayerbotTextMgr.h"
+#include "CreatureAI.h"
 #include "Playerbots.h"
-#include "SpellInfo.h"
+#include "CharmInfo.h"
 #include "SpellMgr.h"
-#include <algorithm>
+#include "SpellInfo.h"
 #include <vector>
+#include <algorithm>
 
 enum PetSpells
 {
@@ -51,10 +49,7 @@ bool MeleeAction::isUseful()
     if (botAI->IsInVehicle() && !botAI->IsInVehicle(false, false, true))
         return false;
 
-    // Do not start autoattack while prowled — let opener spells break stealth intentionally.
-    // Future rogue stealth implementation should use this instead:
-    // return !(botAI->HasAura("stealth", bot) || botAI->HasAura("prowl", bot));
-    return !botAI->HasAura("prowl", bot);
+    return true;
 }
 
 bool TogglePetSpellAutoCastAction::Execute(Event /*event*/)
@@ -87,7 +82,7 @@ bool TogglePetSpellAutoCastAction::Execute(Event /*event*/)
 
         uint32 spellId = itr->first;
         const SpellInfo* spellInfo = sSpellMgr->GetSpellInfo(spellId);
-        if (!spellInfo || !spellInfo->IsAutocastable())
+        if (!spellInfo->IsAutocastable())
             continue;
 
         bool shouldApply = true;
@@ -183,8 +178,7 @@ bool SetPetStanceAction::Execute(Event /*event*/)
     // If there are no controlled pets or guardians, notify the player and exit
     if (targets.empty())
     {
-        botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-            "pet_no_pet_error", "You have no pet or guardian pet.", {}));
+        botAI->TellError("You have no pet or guardian pet.");
         return false;
     }
 

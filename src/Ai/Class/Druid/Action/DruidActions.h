@@ -1,15 +1,13 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
-#ifndef PLAYERBOTS_DRUIDACTIONS_H
-#define PLAYERBOTS_DRUIDACTIONS_H
+#ifndef _PLAYERBOT_DRUIDACTIONS_H
+#define _PLAYERBOT_DRUIDACTIONS_H
 
 #include "GenericSpellActions.h"
 #include "SharedDefines.h"
-#include "Value.h"
 
 class PlayerbotAI;
 class Unit;
@@ -66,7 +64,7 @@ class CastHealingTouchOnPartyAction : public HealPartyMemberAction
 {
 public:
     CastHealingTouchOnPartyAction(PlayerbotAI* botAI)
-        : HealPartyMemberAction(botAI, "healing touch", 50.0f, HealingManaEfficiency::MEDIUM)
+        : HealPartyMemberAction(botAI, "healing touch", 50.0f, HealingManaEfficiency::LOW)
     {
     }
 };
@@ -88,16 +86,16 @@ public:
     bool isUseful() override;
 };
 
-class CastMarkOfTheWildAction : public GroupBuffSpellAction
+class CastMarkOfTheWildAction : public CastBuffSpellAction
 {
 public:
-    CastMarkOfTheWildAction(PlayerbotAI* botAI) : GroupBuffSpellAction(botAI, "mark of the wild") {}
+    CastMarkOfTheWildAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "mark of the wild") {}
 };
 
-class CastMarkOfTheWildOnPartyAction : public GroupBuffOnPartyAction
+class CastMarkOfTheWildOnPartyAction : public BuffOnPartyAction
 {
 public:
-    CastMarkOfTheWildOnPartyAction(PlayerbotAI* botAI) : GroupBuffOnPartyAction(botAI, "mark of the wild") {}
+    CastMarkOfTheWildOnPartyAction(PlayerbotAI* botAI) : BuffOnPartyAction(botAI, "mark of the wild") {}
 };
 
 class CastSurvivalInstinctsAction : public CastBuffSpellAction
@@ -144,11 +142,16 @@ public:
     bool isUseful() override;
 };
 
+class CastOmenOfClarityAction : public CastBuffSpellAction
+{
+public:
+    CastOmenOfClarityAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "omen of clarity") {}
+};
+
 class CastWrathAction : public CastSpellAction
 {
 public:
     CastWrathAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "wrath") {}
-    bool isUseful() override;
 };
 
 class CastStarfallAction : public CastSpellAction
@@ -164,14 +167,6 @@ class CastHurricaneAction : public CastSpellAction
 public:
     CastHurricaneAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "hurricane") {}
     ActionThreatType getThreatType() override { return ActionThreatType::Aoe; }
-};
-
-class CastTyphoonAction : public CastSpellAction
-{
-public:
-    CastTyphoonAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "typhoon") {}
-    ActionThreatType getThreatType() override { return ActionThreatType::Aoe; }
-    bool isUseful() override;
 };
 
 class CastMoonfireAction : public CastDebuffSpellAction
@@ -190,7 +185,6 @@ class CastStarfireAction : public CastSpellAction
 {
 public:
     CastStarfireAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "starfire") {}
-    bool isUseful() override;
 };
 
 class CastEntanglingRootsAction : public CastSpellAction
@@ -199,11 +193,12 @@ public:
     CastEntanglingRootsAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "entangling roots") {}
 };
 
-class CastEntanglingRootsCcAction : public CastCrowdControlSpellAction
+class CastEntanglingRootsCcAction : public CastSpellAction
 {
 public:
-    CastEntanglingRootsCcAction(PlayerbotAI* botAI) : CastCrowdControlSpellAction(botAI, "entangling roots") {}
+    CastEntanglingRootsCcAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "entangling roots on cc") {}
     Value<Unit*>* GetTargetValue() override;
+    bool Execute(Event event) override;
 };
 
 class CastHibernateAction : public CastSpellAction
@@ -212,18 +207,12 @@ public:
     CastHibernateAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "hibernate") {}
 };
 
-class CastHibernateCcAction : public CastCrowdControlSpellAction
+class CastHibernateCcAction : public CastSpellAction
 {
 public:
-    CastHibernateCcAction(PlayerbotAI* botAI) : CastCrowdControlSpellAction(botAI, "hibernate") {}
+    CastHibernateCcAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "hibernate on cc") {}
     Value<Unit*>* GetTargetValue() override;
-};
-
-class CastCycloneCcAction : public CastCrowdControlSpellAction
-{
-public:
-    CastCycloneCcAction(PlayerbotAI* botAI) : CastCrowdControlSpellAction(botAI, "cyclone") {}
-    Value<Unit*>* GetTargetValue() override;
+    bool Execute(Event event) override;
 };
 
 class CastNaturesGraspAction : public CastBuffSpellAction
@@ -275,16 +264,6 @@ public:
     std::string const GetTargetName() override { return "self target"; }
 };
 
-class CastInnervateOnHealerAction : public CastSpellAction
-{
-public:
-    CastInnervateOnHealerAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "innervate") {}
-
-    std::string const GetTargetName() override { return "healer low mana"; }
-    bool isPossible() override;
-    std::vector<NextAction> getPrerequisites() override;
-};
-
 class CastTranquilityAction : public CastAoeHealSpellAction
 {
 public:
@@ -333,15 +312,13 @@ public:
 class CastInsectSwarmOnAttackerAction : public CastDebuffSpellOnAttackerAction
 {
 public:
-    CastInsectSwarmOnAttackerAction(PlayerbotAI* ai) : CastDebuffSpellOnAttackerAction(ai, "insect swarm", true, 0.0f) {}
-    bool isUseful() override { return CastAuraSpellAction::isUseful(); }
+    CastInsectSwarmOnAttackerAction(PlayerbotAI* ai) : CastDebuffSpellOnAttackerAction(ai, "insect swarm") {}
 };
 
 class CastMoonfireOnAttackerAction : public CastDebuffSpellOnAttackerAction
 {
 public:
-    CastMoonfireOnAttackerAction(PlayerbotAI* ai) : CastDebuffSpellOnAttackerAction(ai, "moonfire", true, 0.0f) {}
-    bool isUseful() override { return CastAuraSpellAction::isUseful(); }
+    CastMoonfireOnAttackerAction(PlayerbotAI* ai) : CastDebuffSpellOnAttackerAction(ai, "moonfire") {}
 };
 
 class CastEnrageAction : public CastBuffSpellAction
@@ -365,50 +342,6 @@ class CastForceOfNatureAction : public CastSpellAction
 {
 public:
     CastForceOfNatureAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "force of nature") {}
-};
-
-// Base for blanket HoT actions. Provides GetBlanketTarget() as a member so
-// subclasses can use AI_VALUE and the standard context machinery.
-class CastBlanketHotAction : public CastSpellAction
-{
-public:
-    CastBlanketHotAction(PlayerbotAI* ai, std::string const& spell) : CastSpellAction(ai, spell)
-    {
-        range = botAI->GetRange("heal");
-    }
-
-protected:
-    Unit* GetBlanketTarget(std::string const& auraName);
-};
-
-class CastRejuvenationBlanketAction : public CastBlanketHotAction
-{
-public:
-    CastRejuvenationBlanketAction(PlayerbotAI* ai) : CastBlanketHotAction(ai, "rejuvenation") {}
-    bool isUseful() override;
-    Unit* GetTarget() override;
-    std::string const getName() override { return "rejuvenation blanket"; }
-};
-
-class CastWildGrowthBlanketAction : public CastBlanketHotAction
-{
-public:
-    CastWildGrowthBlanketAction(PlayerbotAI* ai) : CastBlanketHotAction(ai, "wild growth") {}
-    bool isUseful() override;
-    Unit* GetTarget() override;
-    std::string const getName() override { return "wild growth blanket"; }
-};
-
-class EclipseSolarProcTimeValue : public ManualSetValue<time_t>
-{
-public:
-    EclipseSolarProcTimeValue(PlayerbotAI* botAI) : ManualSetValue<time_t>(botAI, 0) {}
-};
-
-class EclipseLunarProcTimeValue : public ManualSetValue<time_t>
-{
-public:
-    EclipseLunarProcTimeValue(PlayerbotAI* botAI) : ManualSetValue<time_t>(botAI, 0) {}
 };
 
 #endif

@@ -1,10 +1,10 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #include "DruidShapeshiftActions.h"
+
 #include "Playerbots.h"
 
 bool CastBearFormAction::isUseful()
@@ -50,10 +50,9 @@ bool CastCancelDruidAction::Execute(Event /*event*/)
     return true;
 }
 
-bool CastCancelDruidAction::isUseful() { return bot->HasAura(auraId); }
+bool CastCancelDruidAction::isUseful() { return botAI->HasAura(auraId, bot); }
 
 bool CastTreeFormAction::isUseful()
 {
-    constexpr uint32 SPELL_TREE_OF_LIFE = 33891;
-    return GetTarget() && CastSpellAction::isUseful() && !bot->HasAura(SPELL_TREE_OF_LIFE);
+    return GetTarget() && CastSpellAction::isUseful() && !botAI->HasAura(33891, bot);
 }

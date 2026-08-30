@@ -1,7 +1,6 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #include "ChatCommandHandlerStrategy.h"
@@ -24,7 +23,7 @@ private:
 // Commands where trigger name =/= action name.
 void ChatCommandHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
-    PassThroughStrategy::InitTriggers(triggers);
+    PassTroughStrategy::InitTriggers(triggers);
 
     // Keep single action triggers on one line, and multi-action triggers on multiple lines.
     triggers.push_back(new TriggerNode("rep", { NextAction("reputation", relevance) }));
@@ -71,7 +70,6 @@ void ChatCommandHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
     triggers.push_back(new TriggerNode("pull back", { NextAction("pull my target", relevance) }));
     triggers.push_back(new TriggerNode("pull rti", { NextAction("pull rti target", relevance) }));
     triggers.push_back(new TriggerNode("ready", { NextAction("ready check", relevance) }));
-    triggers.push_back(new TriggerNode("rebuff", { NextAction("force rebuff", relevance) }));
     triggers.push_back(new TriggerNode("naxx", {NextAction("naxx chat shortcut", relevance) }));
     triggers.push_back(new TriggerNode("bwl", { NextAction("bwl chat shortcut", relevance) }));
     triggers.push_back(new TriggerNode("dps", { NextAction("tell estimated dps", relevance) }));
@@ -81,7 +79,7 @@ void ChatCommandHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
 }
 
 // Commands where trigger name == action name.
-ChatCommandHandlerStrategy::ChatCommandHandlerStrategy(PlayerbotAI* botAI) : PassThroughStrategy(botAI)
+ChatCommandHandlerStrategy::ChatCommandHandlerStrategy(PlayerbotAI* botAI) : PassTroughStrategy(botAI)
 {
     actionNodeFactories.Add(new ChatCommandActionNodeFactoryInternal());
 
@@ -113,7 +111,6 @@ ChatCommandHandlerStrategy::ChatCommandHandlerStrategy(PlayerbotAI* botAI) : Pas
     supported.push_back("maintenance");
     supported.push_back("remove glyph");
     supported.push_back("autogear");
-    supported.push_back("autogear bis");
     supported.push_back("equip upgrade");
     supported.push_back("chat");
     supported.push_back("home");

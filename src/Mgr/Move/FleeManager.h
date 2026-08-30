@@ -1,15 +1,15 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
-#ifndef PLAYERBOTS_FLEEMANAGER_H
-#define PLAYERBOTS_FLEEMANAGER_H
+#ifndef _PLAYERBOT_FLEEMANAGER_H
+#define _PLAYERBOT_FLEEMANAGER_H
+
+#include <vector>
 
 #include "Common.h"
 #include "TravelMgr.h"
-#include <vector>
 
 class Player;
 class PlayerbotAI;
@@ -17,7 +17,8 @@ class PlayerbotAI;
 class FleePoint
 {
 public:
-    FleePoint(float x, float y, float z) : x(x), y(y), z(z), sumDistance(0.0f), minDistance(0.0f)
+    FleePoint(PlayerbotAI* botAI, float x, float y, float z)
+        : x(x), y(y), z(z), sumDistance(0.0f), minDistance(0.0f), botAI(botAI)
     {
     }
 
@@ -27,6 +28,9 @@ public:
 
     float sumDistance;
     float minDistance;
+
+private:
+    PlayerbotAI* botAI;
 };
 
 class FleeManager

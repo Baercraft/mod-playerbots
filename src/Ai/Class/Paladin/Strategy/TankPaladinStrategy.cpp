@@ -1,10 +1,10 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #include "TankPaladinStrategy.h"
+
 #include "Playerbots.h"
 
 class TankPaladinStrategyActionNodeFactory : public NamedObjectFactory<ActionNode>
@@ -95,14 +95,13 @@ void TankPaladinStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
             }
         )
     );
-    triggers.push_back(
-        new TriggerNode(
-            "light aoe",
-            {
-                NextAction("avenger's shield", ACTION_HIGH + 5)
-            }
-        )
-    );
+    triggers.push_back(new TriggerNode(
+        "light aoe",
+        {
+            NextAction("avenger's shield", ACTION_HIGH + 5)
+        }
+    )
+);
     triggers.push_back(
         new TriggerNode(
             "medium aoe",
@@ -123,6 +122,13 @@ void TankPaladinStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     triggers.push_back(
         new TriggerNode(
             "medium health",
+                { NextAction("holy shield", ACTION_HIGH + 4)
+            }
+        )
+    );
+    triggers.push_back(
+        new TriggerNode(
+            "low health",
             {
                 NextAction("holy shield", ACTION_HIGH + 4)
             }
@@ -130,12 +136,20 @@ void TankPaladinStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     );
     triggers.push_back(
         new TriggerNode(
-            "avenging wrath",
+            "critical health",
             {
-                NextAction("avenging wrath", ACTION_HIGH + 2)
+                NextAction("holy shield", ACTION_HIGH + 4)
             }
         )
     );
+    triggers.push_back(
+        new TriggerNode(
+        "avenging wrath",
+        {
+            NextAction("avenging wrath", ACTION_HIGH + 2)
+        }
+    )
+);
     triggers.push_back(
         new TriggerNode(
             "target critical health",

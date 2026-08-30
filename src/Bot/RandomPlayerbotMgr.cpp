@@ -1,15 +1,22 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #include "RandomPlayerbotMgr.h"
+
+#include <WorldSessionMgr.h>
+
+#include <algorithm>
+#include <boost/thread/thread.hpp>
+#include <cstdlib>
+#include <ctime>
+#include <iomanip>
+#include <random>
+
 #include "AiFactory.h"
 #include "Battleground.h"
 #include "BattlegroundMgr.h"
-#include "Cell.h"
-#include "CellImpl.h"
 #include "ChannelMgr.h"
 #include "DBCStores.h"
 #include "DBCStructure.h"
@@ -17,7 +24,6 @@
 #include "Define.h"
 #include "FleeManager.h"
 #include "GridNotifiers.h"
-#include "GridNotifiersImpl.h"
 #include "LFGMgr.h"
 #include "MapMgr.h"
 #include "NewRpgInfo.h"
@@ -28,7 +34,6 @@
 #include "PlayerbotAI.h"
 #include "PlayerbotAIConfig.h"
 #include "PlayerbotFactory.h"
-#include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
 #include "Position.h"
 #include "RaceMgr.h"
@@ -39,13 +44,10 @@
 #include "TravelMgr.h"
 #include "Unit.h"
 #include "World.h"
-#include "WorldSessionMgr.h"
-#include <algorithm>
-#include <boost/thread/thread.hpp>
-#include <cstdlib>
-#include <ctime>
-#include <iomanip>
-#include <random>
+#include "Cell.h"
+#include "GridNotifiers.h"
+#include "CellImpl.h"
+#include "GridNotifiersImpl.h"
 
 struct GuidClassRaceInfo
 {
@@ -306,9 +308,7 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 /*elapsed*/, bool /*minimal*/)
     }
 
     GetBots();
-    // Copied deliberately: ProcessBot() erases from currentBots while this is
-    // being iterated below, so the loops must run over a snapshot.
-    std::unordered_set<uint32> availableBots = currentBots;
+    std::list<uint32> availableBots = currentBots;
     uint32 availableBotCount = availableBots.size();
     uint32 onlineBotCount = playerBots.size();
 
@@ -388,8 +388,7 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 /*elapsed*/, bool /*minimal*/)
             sRandomPlayerbotMgr.CheckLfgQueue();
     }
 
-    if (sPlayerbotAIConfig.randomBotAutologin && sPlayerbotAIConfig.randomBotPrintStatsInterval &&
-        time(nullptr) > (printStatsTimer + sPlayerbotAIConfig.randomBotPrintStatsInterval))
+    if (sPlayerbotAIConfig.randomBotAutologin && time(nullptr) > (printStatsTimer + 300))
     {
         if (!printStatsTimer)
         {
@@ -738,7 +737,7 @@ uint32 RandomPlayerbotMgr::AddRandomBots()
             if (GetEventValue(charInfo.guid, "add") ||
                 GetEventValue(charInfo.guid, "logout") ||
                 GetPlayerBot(charInfo.guid) ||
-                currentBots.contains(charInfo.guid) ||
+                std::find(currentBots.begin(), currentBots.end(), charInfo.guid) != currentBots.end() ||
                 (sPlayerbotAIConfig.disableDeathKnightLogin && charInfo.rClass == CLASS_DEATH_KNIGHT))
             {
                 return false;
@@ -751,7 +750,7 @@ uint32 RandomPlayerbotMgr::AddRandomBots()
 
             SetEventValue(charInfo.guid, "add", 1, add_time);
             SetEventValue(charInfo.guid, "logout", 0, 0);
-            currentBots.insert(charInfo.guid);
+            currentBots.push_back(charInfo.guid);
 
             return true;
         };
@@ -1350,7 +1349,7 @@ bool RandomPlayerbotMgr::ProcessBot(uint32 bot)
                 LOG_DEBUG("playerbots", "Bot #{}: log out", bot);
 
             SetEventValue(bot, "add", 0, 0);
-            currentBots.erase(bot);
+            currentBots.remove(bot);
 
             if (player)
                 LogoutPlayerBot(botGUID);
@@ -1408,8 +1407,10 @@ bool RandomPlayerbotMgr::ProcessBot(uint32 bot)
             if (player->GetGroup() && botAI->GetGroupLeader())
             {
                 PlayerbotAI* groupLeaderBotAI = GET_PLAYERBOT_AI(botAI->GetGroupLeader());
-                if (!groupLeaderBotAI || IsSelfBot(botAI->GetGroupLeader()))
+                if (!groupLeaderBotAI || groupLeaderBotAI->IsRealPlayer())
+                {
                     update = false;
+                }
             }
 
             // if (botAI->HasPlayerNearby(sPlayerbotAIConfig.grindDistance))
@@ -1431,7 +1432,7 @@ bool RandomPlayerbotMgr::ProcessBot(uint32 bot)
         LOG_DEBUG("playerbots", "Bot #{} {}:{} <{}>: log out", bot, IsAlliance(player->getRace()) ? "A" : "H",
                   player->GetLevel(), player->GetName().c_str());
         LogoutPlayerBot(botGUID);
-        currentBots.erase(bot);
+        currentBots.remove(bot);
         SetEventValue(bot, "logout", 1,
                       urand(sPlayerbotAIConfig.minRandomBotInWorldTime, sPlayerbotAIConfig.maxRandomBotInWorldTime));
         return true;
@@ -1617,7 +1618,7 @@ void RandomPlayerbotMgr::RandomTeleport(Player* bot, std::vector<WorldLocation>&
         tlocs.push_back(WorldPosition(loc));
     // Do not teleport to maps disabled in config
     tlocs.erase(std::remove_if(tlocs.begin(), tlocs.end(),
-                               [](WorldPosition l)
+                               [bot](WorldPosition l)
                                {
                                    std::vector<uint32>::iterator i =
                                        find(sPlayerbotAIConfig.randomBotMaps.begin(),
@@ -1740,7 +1741,7 @@ void RandomPlayerbotMgr::PrepareAddclassCache()
                     Field* fields = results->Fetch();
                     ObjectGuid guid = ObjectGuid(HighGuid::Player, fields[0].Get<uint32>());
                     uint32 race = fields[1].Get<uint32>();
-                    bool isAlliance = race == 1 || race == 3 || race == 4 || race == 7 || race == 11;
+                    bool isAlliance = race == 1 || race == 3 || race == 4 || race == 7 || race == 11 || race == 12 || race == 13;
                     addclassCache[GetTeamClassIdx(isAlliance, claz)].insert(guid);
                     collected++;
                 } while (results->NextRow());
@@ -1760,22 +1761,6 @@ void RandomPlayerbotMgr::Init()
         sRandomPlayerbotMgr.LoadBattleMastersCache();
 
     PlayerbotsDatabase.Execute("DELETE FROM playerbots_random_bots WHERE event = 'add'");
-}
-
-void RandomPlayerbotMgr::InitArenaTeams()
-{
-    if (sPlayerbotAIConfig.deleteRandomBotArenaTeams)
-    {
-        RandomPlayerbotFactory::DeleteBotArenaTeams();
-        return;
-    }
-
-    RandomPlayerbotFactory::LoadArenaTeamData();
-
-    LOG_INFO("playerbots", "Bot arena teams: 2v2={}/{}, 3v3={}/{}, 5v5={}/{}",
-             RandomPlayerbotFactory::GetBotArenaTeamCount(ARENA_TYPE_2v2), sPlayerbotAIConfig.randomBotArenaTeam2v2Count,
-             RandomPlayerbotFactory::GetBotArenaTeamCount(ARENA_TYPE_3v3), sPlayerbotAIConfig.randomBotArenaTeam3v3Count,
-             RandomPlayerbotFactory::GetBotArenaTeamCount(ARENA_TYPE_5v5), sPlayerbotAIConfig.randomBotArenaTeam5v5Count);
 }
 
 void RandomPlayerbotMgr::RandomTeleportForLevel(Player* bot)
@@ -2036,14 +2021,14 @@ void RandomPlayerbotMgr::Clear(Player* bot)
     factory.ClearEverything();
 }
 
-uint32 RandomPlayerbotMgr::GetZoneLevel(uint16 mapId, float teleX, float teleY, float /*teleZ*/)
+uint32 RandomPlayerbotMgr::GetZoneLevel(uint16 mapId, float teleX, float teleY, float teleZ)
 {
     uint32 maxLevel = sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
 
     uint32 level = 0;
     QueryResult results = WorldDatabase.Query(
         "SELECT AVG(t.minlevel) minlevel, AVG(t.maxlevel) maxlevel FROM creature c "
-        "INNER JOIN creature_template t ON c.id = t.entry WHERE map = {} AND minlevel > 1 AND ABS(position_x - {}) < "
+        "INNER JOIN creature_template t ON c.id1 = t.entry WHERE map = {} AND minlevel > 1 AND ABS(position_x - {}) < "
         "{} AND ABS(position_y - {}) < {}",
         mapId, teleX, sPlayerbotAIConfig.randomBotTeleportDistance / 2, teleY,
         sPlayerbotAIConfig.randomBotTeleportDistance / 2);
@@ -2116,7 +2101,7 @@ bool RandomPlayerbotMgr::IsRandomBot(Player* bot)
 {
     if (bot && GET_PLAYERBOT_AI(bot))
     {
-        if (IsSelfBot(bot))
+        if (GET_PLAYERBOT_AI(bot)->IsRealPlayer())
             return false;
     }
     if (bot)
@@ -2133,14 +2118,17 @@ bool RandomPlayerbotMgr::IsRandomBot(ObjectGuid::LowType bot)
     if (!sPlayerbotAIConfig.IsInRandomAccountList(sCharacterCache->GetCharacterAccountIdByGuid(guid)))
         return false;
 
-    return currentBots.contains(bot);
+    if (std::find(currentBots.begin(), currentBots.end(), bot) != currentBots.end())
+        return true;
+
+    return false;
 }
 
 bool RandomPlayerbotMgr::IsAddclassBot(Player* bot)
 {
     if (bot && GET_PLAYERBOT_AI(bot))
     {
-        if (IsSelfBot(bot))
+        if (GET_PLAYERBOT_AI(bot)->IsRealPlayer())
             return false;
     }
     if (bot)
@@ -2198,7 +2186,7 @@ void RandomPlayerbotMgr::GetBots()
             Field* fields = result->Fetch();
             uint32 bot = fields[0].Get<uint32>();
             if (GetEventValue(bot, "add"))
-                currentBots.insert(bot);
+                currentBots.push_back(bot);
 
             if (currentBots.size() >= maxAllowedBotCount)
                 break;
@@ -2374,7 +2362,7 @@ void RandomPlayerbotMgr::SetValue(Player* bot, std::string const& type, uint32 v
     SetValue(bot->GetGUID().GetCounter(), type, value, data);
 }
 
-bool RandomPlayerbotMgr::HandlePlayerbotConsoleCommand(ChatHandler* /*handler*/, char const* args)
+bool RandomPlayerbotMgr::HandlePlayerbotConsoleCommand(ChatHandler* handler, char const* args)
 {
     if (!sPlayerbotAIConfig.enabled)
     {
@@ -2561,8 +2549,6 @@ void RandomPlayerbotMgr::OnBotLoginInternal(Player* const bot)
         factory.InitGuild();
     }
 
-    RandomPlayerbotFactory::AssignBotToArenaTeam(bot);
-
     if (sPlayerbotAIConfig.randomBotFixedLevel)
     {
         bot->SetPlayerFlag(PLAYER_FLAGS_NO_XP_GAIN);
@@ -2603,8 +2589,7 @@ void RandomPlayerbotMgr::OnPlayerLogin(Player* player)
                 {
                     botAI->SetMaster(player);
                     botAI->ResetStrategies();
-                    botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-                        "hello", "Hello", {}));
+                    botAI->TellMaster("Hello");
                 }
 
                 break;
@@ -2669,7 +2654,7 @@ void RandomPlayerbotMgr::OnPlayerLogin(Player* player)
 void RandomPlayerbotMgr::OnPlayerLoginError(uint32 bot)
 {
     SetEventValue(bot, "add", 0, 0);
-    currentBots.erase(bot);
+    currentBots.remove(bot);
 }
 
 Player* RandomPlayerbotMgr::GetRandomPlayer()
@@ -2698,7 +2683,7 @@ void RandomPlayerbotMgr::PrintStats()
 
     std::map<uint8, uint32> lvlPerRace;
     std::map<uint8, uint32> lvlPerClass;
-    for (uint8 race = RACE_HUMAN; race < sRaceMgr->GetMaxRaces(); ++race)
+    for (uint8 race = RACE_HUMAN; race < std::max<uint32>(sRaceMgr->GetMaxRaces(), 15u); ++race)
     {
         perRace[race] = 0;
         lvlPerRace[race] = 0;
@@ -2755,7 +2740,7 @@ void RandomPlayerbotMgr::PrintStats()
             continue;
         }
 
-        if (botAI->IsActivityAllowedCached())
+        if (botAI->AllowActivity())
             ++active;
         /* TODO: Review statistics on rpg merge
         if (botAI->GetAiObjectContext()->GetValue<bool>("random bot update")->Get())
@@ -2804,10 +2789,10 @@ void RandomPlayerbotMgr::PrintStats()
         else
             ++engine_dead;
 
-        if (botAI->IsHeal(bot, false))
+        if (botAI->IsHeal(bot, true))
             ++heal;
 
-        else if (botAI->IsTank(bot, false))
+        else if (botAI->IsTank(bot, true))
             ++tank;
 
         else
@@ -2845,7 +2830,7 @@ void RandomPlayerbotMgr::PrintStats()
     }
 
     LOG_INFO("playerbots", "Bots race:");
-    for (uint8 race = RACE_HUMAN; race < sRaceMgr->GetMaxRaces(); ++race)
+    for (uint8 race = RACE_HUMAN; race < std::max<uint32>(sRaceMgr->GetMaxRaces(), 15u); ++race)
     {
         if (perRace[race])
         {
@@ -3066,7 +3051,7 @@ CreatureData const* RandomPlayerbotMgr::GetCreatureDataByEntry(uint32 entry)
     if (entry != 0)
     {
         for (auto const& itr : sObjectMgr->GetAllCreatureData())
-            if (itr.second.id == entry)
+            if (itr.second.id1 == entry)
                 return &itr.second;
     }
 

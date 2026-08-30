@@ -1,10 +1,10 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #include "AiFactory.h"
+
 #include "BattlegroundMgr.h"
 #include "DKAiObjectContext.h"
 #include "DruidAiObjectContext.h"
@@ -25,15 +25,6 @@
 #include "SpellMgr.h"
 #include "WarlockAiObjectContext.h"
 #include "WarriorAiObjectContext.h"
-
-namespace
-{
-constexpr uint32 SPELL_FROSTFIRE_BOLT = 44614;
-constexpr uint32 SPELL_ICE_SHARDS = 15047;
-constexpr uint32 SPELL_WHIRLWIND = 1680;
-constexpr uint32 SPELL_CAT_FORM = 768;
-constexpr uint32 SPELL_DRUID_THICK_HIDE = 16931;
-}
 
 AiObjectContext* AiFactory::createAiObjectContext(Player* player, PlayerbotAI* botAI)
 {
@@ -99,6 +90,9 @@ uint8 AiFactory::GetPlayerSpecTab(Player* bot)
                 break;
             case CLASS_WARLOCK:
                 tab = WARLOCK_TAB_DEMONOLOGY;
+                break;
+            case CLASS_SHAMAN:
+                tab = SHAMAN_TAB_ELEMENTAL;
                 break;
         }
 
@@ -287,7 +281,7 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
     if (!player->InBattleground())
         engine->addStrategiesNoInit("racials", "chat", "default", "cast time", "potions", "duel", "boost", nullptr);
 
-    if (sPlayerbotAIConfig.autoAvoidAoe && facade->HasGameClientMaster())
+    if (sPlayerbotAIConfig.autoAvoidAoe && facade->HasRealPlayerMaster())
         engine->addStrategy("avoid aoe", false);
 
     engine->addStrategy("formation", false);
@@ -298,33 +292,33 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
             if (tab == PRIEST_TAB_SHADOW)
                 engine->addStrategiesNoInit("dps", "shadow debuff", "shadow aoe", nullptr);
             else if (tab == PRIEST_TAB_DISCIPLINE)
-                engine->addStrategy("heal", false);
-            else // if (tab == PRIEST_TAB_HOLY)
-                engine->addStrategy("holy heal", false);
+                engine->addStrategiesNoInit("heal", nullptr);
+            else
+                engine->addStrategiesNoInit("holy heal", nullptr);
 
             engine->addStrategiesNoInit("dps assist", "cure", nullptr);
             break;
         case CLASS_MAGE:
             if (tab == MAGE_TAB_ARCANE)
-                engine->addStrategiesNoInit("arcane", "bdps", nullptr);
+                engine->addStrategiesNoInit("arcane", nullptr);
             else if (tab == MAGE_TAB_FIRE)
             {
-                if (player->HasSpell(SPELL_FROSTFIRE_BOLT) && player->HasAura(SPELL_ICE_SHARDS))
-                    engine->addStrategiesNoInit("frostfire", "bdps", nullptr);
+                if (player->HasSpell(44614) /*Frostfire Bolt*/ && player->HasAura(15047) /*Ice Shards*/)
+                    engine->addStrategiesNoInit("frostfire", nullptr);
                 else
-                    engine->addStrategiesNoInit("fire", "bdps", nullptr);
+                    engine->addStrategiesNoInit("fire", nullptr);
             }
-            else // if (tab == MAGE_TAB_FROST)
-                engine->addStrategiesNoInit("frost", "bmana", nullptr);
+            else
+                engine->addStrategiesNoInit("frost", nullptr);
 
             engine->addStrategiesNoInit("dps", "dps assist", "cure", "cc", "aoe", nullptr);
             break;
         case CLASS_WARRIOR:
             if (tab == WARRIOR_TAB_PROTECTION)
                 engine->addStrategiesNoInit("tank", "tank assist", "pull", "pull back", "aoe", nullptr);
-            else if (tab == WARRIOR_TAB_ARMS || !player->HasSpell(SPELL_WHIRLWIND))
+            else if (tab == WARRIOR_TAB_ARMS || !player->HasSpell(1680)) // Whirlwind
                 engine->addStrategiesNoInit("arms", "aoe", "dps assist", nullptr);
-            else // if (tab == WARRIOR_TAB_FURY)
+            else
                 engine->addStrategiesNoInit("fury", "aoe", "dps assist", nullptr);
             break;
         case CLASS_SHAMAN:
@@ -332,7 +326,7 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
                 engine->addStrategiesNoInit("ele", "stoneskin", "wrath", "mana spring", "wrath of air", nullptr);
             else if (tab == SHAMAN_TAB_RESTORATION)
                 engine->addStrategiesNoInit("resto", "stoneskin", "flametongue", "mana spring", "wrath of air", nullptr);
-            else // if (tab == SHAMAN_TAB_ENHANCEMENT)
+            else
                 engine->addStrategiesNoInit("enh", "strength of earth", "magma", "healing stream", "windfury", nullptr);
 
             engine->addStrategiesNoInit("dps assist", "cure", "aoe", nullptr);
@@ -342,38 +336,39 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
                 engine->addStrategiesNoInit("tank", "tank assist", "pull", "pull back", "bthreat", "barmor", "cure", nullptr);
             else if (tab == PALADIN_TAB_HOLY)
                 engine->addStrategiesNoInit("heal", "dps assist", "cure", "bcast", nullptr);
-            else // if (tab == PALADIN_TAB_RETRIBUTION)
+            else
                 engine->addStrategiesNoInit("dps", "dps assist", "cure", "baoe", nullptr);
             break;
         case CLASS_DRUID:
             if (tab == DRUID_TAB_BALANCE)
             {
-                engine->addStrategiesNoInit("balance", "cure", "aoe", "cc", "dps assist", nullptr);
+                engine->addStrategiesNoInit("caster", "cure", "caster aoe", "dps assist", nullptr);
+                engine->addStrategy("caster debuff", false);
             }
             else if (tab == DRUID_TAB_RESTORATION)
-                engine->addStrategiesNoInit("resto", "cure", "dps assist", "tranquility", nullptr);
+                engine->addStrategiesNoInit("heal", "cure", "dps assist", nullptr);
             else
             {
-                if (player->HasSpell(SPELL_CAT_FORM) && !player->HasAura(SPELL_DRUID_THICK_HIDE))
-                    engine->addStrategiesNoInit("cat", "aoe", "cc", "dps assist", "feral charge", nullptr);
+                if (player->HasSpell(768) /*cat form*/ && !player->HasAura(16931) /*thick hide*/)
+                    engine->addStrategiesNoInit("cat", "dps assist", nullptr);
                 else
-                    engine->addStrategiesNoInit("bear", "tank assist", "pull", "pull back", "feral charge", nullptr);
+                    engine->addStrategiesNoInit("bear", "tank assist", "pull", "pull back", nullptr);
             }
             break;
         case CLASS_HUNTER:
             if (tab == HUNTER_TAB_BEAST_MASTERY)
-                engine->addStrategy("bm", false);
+                engine->addStrategiesNoInit("bm", nullptr);
             else if (tab == HUNTER_TAB_MARKSMANSHIP)
-                engine->addStrategy("mm", false);
-            else // if (tab == HUNTER_TAB_SURVIVAL)
-                engine->addStrategy("surv", false);
+                engine->addStrategiesNoInit("mm", nullptr);
+            else
+                engine->addStrategiesNoInit("surv", nullptr);
 
             engine->addStrategiesNoInit("cc", "dps assist", "aoe", "bdps", nullptr);
             break;
         case CLASS_ROGUE:
             if (tab == ROGUE_TAB_ASSASSINATION || tab == ROGUE_TAB_SUBTLETY)
                 engine->addStrategiesNoInit("melee", "dps assist", "aoe", nullptr);
-            else // if (tab == ROGUE_TAB_COMBAT)
+            else
                 engine->addStrategiesNoInit("dps", "dps assist", "aoe", nullptr);
             break;
         case CLASS_WARLOCK:
@@ -381,7 +376,7 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
                 engine->addStrategiesNoInit("affli", "curse of agony", nullptr);
             else if (tab == WARLOCK_TAB_DEMONOLOGY)
                 engine->addStrategiesNoInit("demo", "curse of agony", "meta melee", nullptr);
-            else // if (tab == WARLOCK_TAB_DESTRUCTION)
+            else
                 engine->addStrategiesNoInit("destro", "curse of elements", nullptr);
 
             engine->addStrategiesNoInit("cc", "dps assist", "aoe", nullptr);
@@ -391,7 +386,7 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
                 engine->addStrategiesNoInit("blood", "tank assist", "pull", "pull back", nullptr);
             else if (tab == DEATH_KNIGHT_TAB_FROST)
                 engine->addStrategiesNoInit("frost", "frost aoe", "dps assist", nullptr);
-            else // if (tab == DEATH_KNIGHT_TAB_UNHOLY)
+            else
                 engine->addStrategiesNoInit("unholy", "unholy aoe", "dps assist", nullptr);
             break;
     }
@@ -410,7 +405,7 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
             engine->addStrategy("healer dps", false);
     }
 
-    if (IsSelfBot(player) || sRandomPlayerbotMgr.IsRandomBot(player))
+    if (facade->IsRealPlayer() || sRandomPlayerbotMgr.IsRandomBot(player))
     {
         if (!player->GetGroup())
         {
@@ -431,14 +426,15 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
                 {
                     if (tab == DRUID_TAB_RESTORATION)
                     {
-                        engine->addStrategiesNoInit("aoe", nullptr);
+                        engine->addStrategiesNoInit("caster", "caster aoe", nullptr);
+                        engine->addStrategy("caster debuff", false);
                     }
                     break;
                 }
                 case CLASS_SHAMAN:
                 {
                     if (tab == SHAMAN_TAB_RESTORATION)
-                        engine->addStrategiesNoInit("caster", "caster aoe", nullptr);
+                        engine->addStrategiesNoInit("caster", "caster aoe", "bmana", nullptr);
                     break;
                 }
                 case CLASS_PALADIN:
@@ -509,21 +505,21 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
     switch (player->getClass())
     {
         case CLASS_PRIEST:
-            nonCombatEngine->addStrategiesNoInit("dps assist", "cure", "rshadow", nullptr);
+            nonCombatEngine->addStrategiesNoInit("dps assist", "cure", nullptr);
             break;
         case CLASS_PALADIN:
             if (tab == PALADIN_TAB_PROTECTION)
             {
                 nonCombatEngine->addStrategiesNoInit("bthreat", "tank assist", "pull", "barmor", nullptr);
                 if (player->GetLevel() >= 20)
-                    nonCombatEngine->addStrategy("bsanc", false);
+                    nonCombatEngine->addStrategy("bhealth", false);
                 else
-                    nonCombatEngine->addStrategy("bmight", false);
+                    nonCombatEngine->addStrategy("bdps", false);
             }
             else if (tab == PALADIN_TAB_HOLY)
-                nonCombatEngine->addStrategiesNoInit("dps assist", "bwisdom", "bcast", nullptr);
+                nonCombatEngine->addStrategiesNoInit("dps assist", "bmana", "bcast", nullptr);
             else
-                nonCombatEngine->addStrategiesNoInit("dps assist", "bmight", "baoe", nullptr);
+                nonCombatEngine->addStrategiesNoInit("dps assist", "bdps", "baoe", nullptr);
 
             nonCombatEngine->addStrategiesNoInit("cure", nullptr);
             break;
@@ -531,6 +527,11 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
             nonCombatEngine->addStrategiesNoInit("bdps", "dps assist", "pet", nullptr);
             break;
         case CLASS_SHAMAN:
+            if (tab == SHAMAN_TAB_ELEMENTAL || tab == SHAMAN_TAB_RESTORATION)
+                nonCombatEngine->addStrategy("bmana", false);
+            else
+                nonCombatEngine->addStrategy("bdps", false);
+
             nonCombatEngine->addStrategiesNoInit("dps assist", "cure", nullptr);
             break;
         case CLASS_MAGE:
@@ -544,7 +545,7 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
         case CLASS_DRUID:
             if (tab == DRUID_TAB_FERAL)
             {
-                if (player->GetLevel() >= 20 && !player->HasAura(SPELL_DRUID_THICK_HIDE))
+                if (player->GetLevel() >= 20 && !player->HasAura(16931) /*thick hide*/)
                     nonCombatEngine->addStrategy("dps assist", false);
                 else
                     nonCombatEngine->addStrategiesNoInit("tank assist", "pull", nullptr);
@@ -581,7 +582,7 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
 
     if (!player->InBattleground())
     {
-        nonCombatEngine->addStrategiesNoInit("nc", "food", "chat", "follow", "default", "force rebuff", "quest", "loot",
+        nonCombatEngine->addStrategiesNoInit("nc", "food", "chat", "follow", "default", "quest", "loot",
                                             "gather", "duel", "pvp", "buff", "mount", "emote", nullptr);
     }
 
@@ -673,8 +674,8 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
     // Battleground switch
     if (player->InBattleground() && player->GetBattleground())
     {
-        nonCombatEngine->addStrategiesNoInit("nc", "chat", "default", "force rebuff", "buff", "food", "mount", "pvp",
-                                       "dps assist", "attack tagged", "emote", nullptr);
+        nonCombatEngine->addStrategiesNoInit("nc", "chat", "default", "buff", "food", "mount", "pvp", "dps assist",
+                                       "attack tagged", "emote", nullptr);
         nonCombatEngine->removeStrategy("custom::say", false);
         nonCombatEngine->removeStrategy("travel", false);
         nonCombatEngine->removeStrategy("rpg", false);

@@ -1,15 +1,9 @@
-/*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
- */
-
 #include "TradeStatusExtendedAction.h"
 #include "Event.h"
 #include "Player.h"
 #include "PlayerbotAI.h"
-#include "TradeData.h"
 #include "WorldPacket.h"
+#include "TradeData.h"
 
 bool TradeStatusExtendedAction::Execute(Event event)
 {
@@ -73,10 +67,9 @@ bool TradeStatusExtendedAction::Execute(Event event)
                 return false;
             }
 
-            constexpr uint32 SPELL_PICK_LOCK = 1804;
-            if (bot->getClass() == CLASS_ROGUE && bot->HasSpell(SPELL_PICK_LOCK) && lockbox->IsLocked())
+            if (bot->getClass() == CLASS_ROGUE && bot->HasSpell(1804) && lockbox->IsLocked()) // Pick Lock spell
             {
-                // botAI->CastSpell(SPELL_PICK_LOCK, bot, lockbox); // Attempt to cast Pick Lock on the lockbox
+                // botAI->CastSpell(1804, bot, lockbox); // Attempt to cast Pick Lock on the lockbox
                 botAI->DoSpecificAction("unlock traded item");
                 botAI->SetNextCheckDelay(4000); // Delay before accepting trade
             }

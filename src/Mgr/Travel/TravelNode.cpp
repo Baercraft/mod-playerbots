@@ -1,19 +1,21 @@
+#include <algorithm>
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #include "TravelNode.h"
+
+#include <iomanip>
+#include <regex>
+#include <unordered_set>
+
 #include "BudgetValues.h"
 #include "PathGenerator.h"
 #include "Playerbots.h"
 #include "RaceMgr.h"
 #include "ServerFacade.h"
 #include "TransportMgr.h"
-#include <iomanip>
-#include <regex>
-#include <unordered_set>
 
 // TravelNodePath(float distance = 0.1f, float extraCost = 0, TravelNodePathType pathType = TravelNodePathType::walk,
 // uint32 pathObject = 0, bool calculated = false, std::vector<uint8> maxLevelCreature = { 0,0,0 }, float swimDistance =
@@ -55,7 +57,7 @@ void TravelNodePath::calculateCost(bool distanceOnly)
         {
             for (CreatureData const* cData : point.getCreaturesNear(50))  // Agro radius + 5
             {
-                CreatureTemplate const* cInfo = sObjectMgr->GetCreatureTemplate(cData->id);
+                CreatureTemplate const* cInfo = sObjectMgr->GetCreatureTemplate(cData->id1);
                 if (cInfo)
                 {
                     FactionTemplateEntry const* factionEntry = sFactionTemplateStore.LookupEntry(cInfo->faction);
@@ -1596,7 +1598,7 @@ void TravelNodeMap::generateNpcNodes()
         WorldPosition guidP(creatureData->mapid, creatureData->posX, creatureData->posY, creatureData->posZ,
                             creatureData->orientation);
 
-        CreatureTemplate const* cInfo = sObjectMgr->GetCreatureTemplate(creatureData->id);
+        CreatureTemplate const* cInfo = sObjectMgr->GetCreatureTemplate(creatureData->id1);
         if (!cInfo)
             continue;
 
@@ -1653,15 +1655,19 @@ void TravelNodeMap::generateStartNodes()
 {
     std::map<uint8, std::string> startNames;
     startNames[RACE_HUMAN] = "Human";
-    startNames[RACE_ORC] = "Orc and Troll";
+    startNames[RACE_ORC] = "Orc, Troll and Goblin";
     startNames[RACE_DWARF] = "Dwarf and Gnome";
-    startNames[RACE_NIGHTELF] = "Night Elf";
+    startNames[RACE_NIGHTELF] = "Night Elf and Worgen";
     startNames[RACE_UNDEAD_PLAYER] = "Undead";
     startNames[RACE_TAUREN] = "Tauren";
     startNames[RACE_GNOME] = "Dwarf and Gnome";
-    startNames[RACE_TROLL] = "Orc and Troll";
+    startNames[RACE_TROLL] = "Orc, Troll and Goblin";
+    startNames[RACE_WORGEN] = "Night Elf and Worgen";
+    startNames[RACE_GOBLIN] = "Orc, Troll and Goblin";
+    startNames[13] = "High Elf";
+    startNames[14] = "Maghar Orc";
 
-    for (uint32 i = 0; i < sRaceMgr->GetMaxRaces(); i++)
+    for (uint32 i = 0; i < std::max<uint32>(sRaceMgr->GetMaxRaces(), 15u); i++)
     {
         for (uint32 j = 0; j < MAX_CLASSES; j++)
         {

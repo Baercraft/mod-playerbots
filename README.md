@@ -82,3 +82,16 @@ Also, a thank you to the many contributors who've helped build this project:
 <a href="https://github.com/mod-playerbots/mod-playerbots/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=mod-playerbots/mod-playerbots" />
 </a>
+
+
+## Baercraft custom race compatibility
+
+This build includes compatibility for the Baercraft 5.9 custom races:
+
+- Race 13: High Elf (Alliance), using Blood Elf naming/emote/mount behavior where Playerbots needs a stock-race fallback.
+- Race 14: Mag'har Orc (Horde), using Orc naming/emote/mount behavior where Playerbots needs a stock-race fallback.
+
+RandomPlayerbotFactory can create these races whenever the core/DBC/playercreateinfo data exposes a valid race/class combination. The custom-race module remains responsible for the actual race definitions, appearances, start data and racial spells.
+
+### Race 13/14 enumeration fix
+Baercraft compatibility also extends Playerbots race enumeration through race ID 14. Stock 3.3.5 `RaceMgr::GetMaxRaces()` may stop before the custom IDs, which otherwise prevents High Elf (13) and Mag'har (14) from being selected for random-bot creation or shown in bot race statistics.

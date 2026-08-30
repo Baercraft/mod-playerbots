@@ -1,12 +1,11 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #include "AcceptQuestAction.h"
+
 #include "Event.h"
-#include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
 
 bool AcceptAllQuestsAction::ProcessQuest(Quest const* quest, Object* questGiver)
@@ -19,11 +18,7 @@ bool AcceptAllQuestsAction::ProcessQuest(Quest const* quest, Object* questGiver)
     if (botAI->HasStrategy("debug quest", BotState::BOT_STATE_NON_COMBAT) || botAI->HasStrategy("debug rpg", BotState::BOT_STATE_COMBAT))
     {
         LOG_INFO("playerbots", "{} => Quest [{}] accepted", bot->GetName(), quest->GetTitle());
-        std::string text = PlayerbotTextMgr::instance().GetBotTextOrDefault(
-            "quest_accept_debug",
-            "Quest [%quest] accepted",
-            {{"%quest", text_quest}});
-        bot->Say(text, LANG_UNIVERSAL);
+        bot->Say("Quest [" + text_quest + "] accepted", LANG_UNIVERSAL);
     }
 
     return true;
@@ -118,8 +113,7 @@ bool AcceptQuestShareAction::Execute(Event event)
     if (bot->HasQuest(quest))
     {
         bot->SetDivider(ObjectGuid::Empty);
-        botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-            "quest_already_have_error", "I have this quest", {}));
+        botAI->TellError("I have this quest");
         return false;
     }
 
@@ -127,8 +121,7 @@ bool AcceptQuestShareAction::Execute(Event event)
     {
         // can't take quest
         bot->SetDivider(ObjectGuid::Empty);
-        botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-            "quest_cant_take_error", "I can't take this quest", {}));
+        botAI->TellError("I can't take this quest");
 
         return false;
     }
@@ -156,8 +149,7 @@ bool AcceptQuestShareAction::Execute(Event event)
             bot->CastSpell(bot, qInfo->GetSrcSpell(), true);
         }
 
-        botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-            "quest_accept", "Quest accepted", {}));
+        botAI->TellMaster("Quest accepted");
         return true;
     }
 

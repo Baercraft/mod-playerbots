@@ -1,10 +1,10 @@
 /*
- * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
- * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
- * or (at your option) any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #include "EmoteAction.h"
+
 #include "Event.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
@@ -891,12 +891,15 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
                 return 2;
             }
             case RACE_GNOME:
+            case RACE_WORGEN:
+            case RACE_GOBLIN:
             {
                 if (Gender == GENDER_MALE)
                     return 1;
 
                 return 1;
             }
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             {
                 if (Gender == GENDER_MALE)
@@ -942,12 +945,27 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
 
                 return 2;
             }
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             {
                 if (Gender == GENDER_MALE)
                     return 3;
 
                 return 3;
+            }
+            case RACE_WORGEN:
+            {
+                if (Gender == GENDER_MALE)
+                    return 5;
+
+                return 4;
+            }
+            case RACE_GOBLIN:
+            {
+                if (Gender == GENDER_MALE)
+                    return 5;
+
+                return 5;
             }
         }
     }
@@ -957,6 +975,7 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
         {
             case RACE_HUMAN:
             case RACE_NIGHTELF:
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             case RACE_UNDEAD_PLAYER:
             case RACE_TAUREN:
@@ -975,6 +994,8 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
                 return 2;
             }
             case RACE_GNOME:
+            case RACE_WORGEN:
+            case RACE_GOBLIN:
             {
                 if (Gender == GENDER_MALE)
                     return 3;
@@ -1003,6 +1024,7 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
 
                 return 4;
             }
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             case RACE_UNDEAD_PLAYER:
             case RACE_TAUREN:
@@ -1012,6 +1034,14 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
                     return 3;
 
                 return 3;
+            }
+            case RACE_WORGEN:
+            case RACE_GOBLIN:
+            {
+                if (Gender == GENDER_MALE)
+                    return 4;
+
+                return 4;
             }
         }
     }
@@ -1025,6 +1055,7 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
         {
             case RACE_HUMAN:
             case RACE_NIGHTELF:
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             case RACE_UNDEAD_PLAYER:
             case RACE_TAUREN:
@@ -1048,6 +1079,14 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
                     return 2;
 
                 return 1;
+            }
+            case RACE_WORGEN:
+            case RACE_GOBLIN:
+            {
+                if (Gender == GENDER_MALE)
+                    return 3;
+
+                return 3;
             }
         }
     }
@@ -1073,8 +1112,11 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
             }
             case RACE_NIGHTELF:
             case RACE_GNOME:
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             case RACE_UNDEAD_PLAYER:
+            case RACE_WORGEN:
+            case RACE_GOBLIN:
             {
                 if (Gender == GENDER_MALE)
                     return 2;
@@ -1090,9 +1132,12 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
             case RACE_HUMAN:
             case RACE_NIGHTELF:
             case RACE_GNOME:
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             case RACE_UNDEAD_PLAYER:
             case RACE_TAUREN:
+            case RACE_WORGEN:
+            case RACE_GOBLIN:
             {
                 if (Gender == GENDER_MALE)
                     return 2;
@@ -1116,9 +1161,12 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
             case RACE_HUMAN:
             case RACE_NIGHTELF:
             case RACE_GNOME:
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             case RACE_UNDEAD_PLAYER:
             case RACE_TAUREN:
+            case RACE_WORGEN:
+            case RACE_GOBLIN:
             {
                 if (Gender == GENDER_MALE)
                     return 2;
@@ -1146,9 +1194,12 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
             case RACE_TAUREN:
             case RACE_TROLL:
             case RACE_GNOME:
+            case RACE_WORGEN:
+            case RACE_GOBLIN:
             {
                 return 2;
             }
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             {
                 if (Gender == GENDER_MALE)
@@ -1165,6 +1216,7 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
             case RACE_HUMAN:
             case RACE_DWARF:
             case RACE_NIGHTELF:
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             case RACE_UNDEAD_PLAYER:
             case RACE_TAUREN:
@@ -1176,6 +1228,8 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
                 return 3;
             }
             case RACE_GNOME:
+            case RACE_WORGEN:
+            case RACE_GOBLIN:
             {
                 if (Gender == GENDER_MALE)
                     return 4;
@@ -1207,12 +1261,27 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
 
                 return 3;
             }
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             {
                 if (Gender == GENDER_MALE)
                     return 4;
 
                 return 4;
+            }
+            case RACE_WORGEN:
+            {
+                if (Gender == GENDER_MALE)
+                    return 6;
+
+                return 4;
+            }
+            case RACE_GOBLIN:
+            {
+                if (Gender == GENDER_MALE)
+                    return 6;
+
+                return 6;
             }
         }
     }
@@ -1231,9 +1300,12 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
             }
             case RACE_NIGHTELF:
             case RACE_GNOME:
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             case RACE_UNDEAD_PLAYER:
             case RACE_TAUREN:
+            case RACE_WORGEN:
+            case RACE_GOBLIN:
             {
                 if (Gender == GENDER_MALE)
                     return 3;
@@ -1249,6 +1321,7 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
             case RACE_HUMAN:
             case RACE_NIGHTELF:
             case RACE_GNOME:
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             case RACE_UNDEAD_PLAYER:
             case RACE_TROLL:
@@ -1282,9 +1355,12 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
             case RACE_DWARF:
             case RACE_NIGHTELF:
             case RACE_GNOME:
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             case RACE_TAUREN:
             case RACE_TROLL:
+            case RACE_WORGEN:
+            case RACE_GOBLIN:
             {
                 if (Gender == GENDER_MALE)
                     return 3;
@@ -1304,9 +1380,12 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
         {
             case RACE_HUMAN:
             case RACE_NIGHTELF:
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             case RACE_TAUREN:
             case RACE_TROLL:
+            case RACE_WORGEN:
+            case RACE_GOBLIN:
             {
                 if (Gender == GENDER_MALE)
                     return 3;
@@ -1363,6 +1442,7 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
 
                 return 5;
             }
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             case RACE_UNDEAD_PLAYER:
             {
@@ -1370,6 +1450,20 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
                     return 6;
 
                 return 6;
+            }
+            case RACE_WORGEN:
+            {
+                if (Gender == GENDER_MALE)
+                    return 10;
+
+                return 9;
+            }
+            case RACE_GOBLIN:
+            {
+                if (Gender == GENDER_MALE)
+                    return 10;
+
+                return 10;
             }
         }
     }
@@ -1405,6 +1499,7 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
 
                 return 3;
             }
+            case 14: // Mag'har -> Orc emote behavior
             case RACE_ORC:
             {
                 if (Gender == GENDER_MALE)
@@ -1432,6 +1527,20 @@ uint32 EmoteActionBase::GetNumberOfEmoteVariants(TextEmotes emote, uint8 Race, u
                     return 4;
 
                 return 7;
+            }
+            case RACE_WORGEN:
+            {
+                if (Gender == GENDER_MALE)
+                    return 10;
+
+                return 9;
+            }
+            case RACE_GOBLIN:
+            {
+                if (Gender == GENDER_MALE)
+                    return 10;
+
+                return 10;
             }
         }
     }

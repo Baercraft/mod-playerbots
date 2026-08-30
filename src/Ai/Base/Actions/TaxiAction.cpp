@@ -4,12 +4,12 @@
  */
 
 #include "TaxiAction.h"
-#include "Config.h"
+
 #include "Event.h"
 #include "LastMovementValue.h"
-#include "PlayerbotAIConfig.h"
-#include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
+#include "PlayerbotAIConfig.h"
+#include "Config.h"
 
 bool TaxiAction::Execute(Event event)
 {
@@ -24,8 +24,7 @@ bool TaxiAction::Execute(Event event)
     {
         movement.taxiNodes.clear();
         movement.Set(nullptr);
-        botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-            "taxi_ready_next_flight", "I am ready for the next flight", {}));
+        botAI->TellMaster("I am ready for the next flight");
         return true;
     }
 
@@ -42,7 +41,6 @@ bool TaxiAction::Execute(Event event)
         if (bot->GetDistance(npc) > sPlayerbotAIConfig.farDistance)
             continue;
 
-        bot->GetSession()->SendLearnNewTaxiNode(npc);
         uint32 curloc = sObjectMgr->GetNearestTaxiNode(npc->GetPositionX(), npc->GetPositionY(), npc->GetPositionZ(),
                                                        npc->GetMapId(), bot->GetTeamId());
 
@@ -59,7 +57,7 @@ bool TaxiAction::Execute(Event event)
         }
 
         // Only for follower bots
-        if (botAI->HasGameClientMaster())
+        if (botAI->HasRealPlayerMaster())
         {
             uint32 index = botAI->GetGroupSlotIndex(bot);
             uint32 delay = sPlayerbotAIConfig.botTaxiDelayMin +
@@ -122,15 +120,13 @@ bool TaxiAction::Execute(Event event)
         {
             movement.taxiNodes.clear();
             movement.Set(nullptr);
-            botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-                "taxi_cant_fly_with_you", "I can't fly with you", {}));
+            botAI->TellError("I can't fly with you");
             return false;
         }
 
         return true;
     }
 
-    botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
-        "taxi_no_flightmaster_nearby", "Cannot find any flightmaster to talk", {}));
+    botAI->TellError("Cannot find any flightmaster to talk");
     return false;
 }
